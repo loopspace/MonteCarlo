@@ -1,0 +1,21 @@
+.smallinput {
+    width: 3em;
+}
+
+input[type="text"] {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+table .recordLabel:after {
+    content: ": ";
+}
+
+ol .recordLabel:after {
+	content: " = ";
+}
+
+#coins {
+	width: 100%;
+}
