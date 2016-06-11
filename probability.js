@@ -29,6 +29,27 @@ function init() {
     var biased = document.getElementById("biased");
     biased.addEventListener("change",setBias);
     setBias();
+    checkPlurals();
+    /*
+      Make the question mark toggle the help pane
+     */
+    var hlnk = document.getElementById('helplink');
+    var hdv = document.getElementById('help');
+    hlnk.addEventListener('click', function(e) {
+	e.preventDefault();
+	if (hdv.style.display == 'none' || hdv.style.display == '') {
+	    hdv.style.display = 'block';
+	} else {
+	    hdv.style.display = 'none';
+	}
+	return false;
+    });
+    /*
+      Set the help pane height to the window height,
+      Should probably update on resize
+     */
+    var h = window.innerHeight - 20;
+    hdv.style.height = h + 'px';
 }
 
 window.addEventListener("load",init);
@@ -148,7 +169,7 @@ function runExperiment(e) {
     /*
       This initialises the count and total registers.
      */
-    counts = makeCounters(counts);
+    counts = makeCounters(counts,n);
     totals = makeTotals(totals);
 
     /*
@@ -174,6 +195,7 @@ function runExperiment(e) {
       The item element is where the current experiment will be recorded.
      */
     var item = document.createElement("li");
+    item.className = 'expt';
     list.appendChild(item);
     
     e.target.value = "Pause experiment";
@@ -187,9 +209,25 @@ function runExperiment(e) {
 }
 
 function stopExperiment() {
+    checkPlurals();
     var button = document.getElementById("run");
     button.value = "Run experiment";
     running = false;
+}
+
+function checkPlurals() {
+    if (form.elements["num"].value == 1|| form.elements["num"].value == '') {
+	document.getElementById("order").style.display = 'none';
+	document.getElementById("plcoins").style.display = 'none';
+    } else {
+	document.getElementById("order").style.display = 'inline';
+	document.getElementById("plcoins").style.display = 'inline';
+    }
+    if (form.elements["fps"].value == 1 || form.elements["fps"].value == '') {
+	document.getElementById("plflips").style.display = 'none';
+    } else {
+	document.getElementById("plflips").style.display = 'inline';
+    }
 }
 
 function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,sep,record,recordelts,tf,fps) {
@@ -246,6 +284,7 @@ function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,se
 	    // Nope, so create a new li for the next experiment and
 	    // start all over again
 	    item = document.createElement("li");
+	    item.className = 'expt';
 	    list.appendChild(item);
 	    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,sep,record,recordelts,0,fps) });
 	} else {
@@ -294,13 +333,13 @@ function check(c,k) {
     return c[k].value;
 }
 
-function makeCounters(c) {
+function makeCounters(c,n) {
     /*
       This assigns Counter objects to each count that is called for.
      */
     var ctr = [];
     for (k in c) {
-	ctr[c[k]] = new Counter(k);
+	ctr[c[k]] = new Counter(k,n);
     }
     return ctr;
 }
@@ -326,11 +365,11 @@ function makeExpression(str,c,t) {
     /*
       Replace natural language by javascript
      */
-    str = str.replace("and","&&");
-    str = str.replace("or","||");
-    str = str.replace("not","!");
-    str = str.replace("=","==");
-    str = str.replace("====","==");
+    str = str.replace(/and/gi,"&&");
+    str = str.replace(/or/gi,"||");
+    str = str.replace(/not/gi,"!");
+    str = str.replace(/=/g,"==");
+    str = str.replace(/====/g,"==");
 
     /*
       Look through for any occurences of "count(...)".
@@ -457,6 +496,7 @@ Counter = function(s,k) {
       single experiment.
      */
     this.value = 0;
+    s = s.replace(/\s+/g,'');
     this.length = s.length;
     this.state = "";
     if (k > 1) {
