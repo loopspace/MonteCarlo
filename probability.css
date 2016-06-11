@@ -1,5 +1,6 @@
 .smallinput {
     width: 3em;
+    text-align: right;
 }
 
 input[type="text"] {
@@ -18,4 +19,40 @@ ol .recordLabel:after {
 
 #coins {
 	width: 100%;
+}
+
+.help {
+    position: fixed;
+    right: 0px;
+    top: 0px;
+    border-radius: 5px 0px 5px 5px;
+    border: 1px solid;
+    padding: 5px;
+    background: #ccc;
+    padding-right: 15px;
+}
+
+#help {
+    display: none;
+    overflow: auto;
+    width: 33%;
+}
+
+#helpsign {
+    font-size: 200%;
+    padding-left: 15px;
+    background: #ddd;
+}
+
+#helpsign a {
+    text-decoration: none;
+    color: black;
+}
+
+.desc {
+    font-weight: bold;
+}
+
+.expt {
+    font-family: monospace;
 }
