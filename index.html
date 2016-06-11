@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">	
+    <title>Practical Probability</title>
+    <script src="probability.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="probability.css" type="text/css">
+  </head>
+  <body>
+    <form id="instructions">
+      <p>
+	Flip <input type="text" id="num" class="smallinput"></input>
+	<select id="biased">
+	  <option value="0">unbiased</option>
+	  <option value="1">biased</option>
+	</select>
+	<span id="biaschoice">
+	  (with bias <input type="text" id="bias" class="smallinput"></input>)
+	</span>
+	<select id="order">
+	  <option value="0">ordered</option>
+	  <option value="1">unordered</option>
+	</select>
+	coin<span id="plcoins">s</span>,<br> updating every
+	<input type="text" id="fps" class="smallinput"></input>
+	flip<span id="plflips">s</span>,<br>
+	until
+	<input type="text" id="stop"></input>
+	recording
+	<input type="text" id="record"></input>,<br>
+	repeat this experiment until
+	<input type="text" id="loop"></input>
+	recording
+	<input type="text" id="total"></input>.<br>
+	<input type="button" id="run" value="Run experiment."></input>
+      </p>
+    </form>
+    <p id="recording">
+	<table id="recordtable">
+	</table>
+    </p>
+    <p id="totals">
+	<ol id="totalslist">
+	</ol>
+    </p>
+    <p id="coins">
+    </p>
+      <div id="help" class="help">
+	<h3>Help</h3>
+	<p>
+	  This website allows you to run coin flipping experiments.
+	  The baseline event is to flip a fixed number of coins and
+	  record the heads and tails.
+	  You can specify various parameters, explained below.
+	</p>
+	<p>
+	  The conditions for stopping an experiment or run of
+	  experiments and the counts that can be recorded use a
+	  particular syntax.
+	  The basic element is <code>count(...)</code> which counts
+	  the number of occurences of an event within an experiment.
+	  For keeping track between experiments, there
+	  is <code>total(...)</code>.
+	  These can also be used in the "recording" fields.
+	  Logical and mathematical expressions using these can be
+	  used.
+	  Examples are given in the explanations below.
+	</p>
+	<ul>
+	  <li><span class="desc">Number of coins</span>
+	    in each individual experiment.
+	    When flipping more than one coin, use a comma to separate
+	    patterns in the counts.
+	  <li><span class="desc">(Un)Biased</span>: It is possible to
+	    specify a bias for the coins.
+	    The bias is the probability of flipping a head.
+	  <li><span class="desc">(Un)Ordered</span>: When more than
+	    one coin is flipped, the results can be recorded either
+	    ordered or unordered.  If unordered, the results are
+	    sorted so that heads are listed first.
+	  <li><span class="desc">Updating every ...</span>: The
+	    website lists the experiments, but with a long run it can
+	    be slow to update every coin flip.
+	  <li><span class="desc">Until</span>: This gives a condition
+	    for when a given run of experiments should be stopped.
+	    <ul>
+	      <li><code>count() = 10</code> Stop when the number of runs is
+		10.
+	      <li><code>count(h) = 10</code> Stop when the number of
+		heads is 10.
+	      <li><code>count(h) = 10 or count(t) = 10</code> Stop
+		when the number of heads is 10 or the number of tails is
+		10.
+	      <li><code>count(hht) = 3</code> Stop when the pattern
+		"HHT" has been seen three times.
+	      <li><code>count(hh,tt) = 1</code> When flipping two
+		coins, stop when two heads are followed by two tails.
+	      <li><code>count(hh) = 1 or count(th) = 1</code> Stop
+	      when either HH or TH is seen.
+	    </ul>
+	  <li><span class="desc">Recording</span>: This records
+	    various counts of things that happen during an experiment.
+	    Separate different counts with commas.
+	    <ul>
+	      <li><code>count()</code> Count the number of flips.
+	      <li><code>count(h), count(t)</code> Count the heads and
+		the tails.
+	      <li><code>count(hh)/count(h)</code> Record the ratio of
+		"HH" to "H".
+	    </ul>
+	  <li><span class="desc">Repeat until</span>: The basic
+	    experiment can be repeated, this gives a condition on when
+	    to stop.
+	    <ul>
+	      <li><code>total(count() &gt; 10) = 3</code> Stop when there
+	      have been three experiments that have had at least 10
+		flips.
+	      <li><code>total(count(h) &gt; count(t)) = 1</code> Stop
+		when an experiment has more heads than tails.
+	      <li><code>total(1) = 10</code> Stop after ten
+		experiments.
+	    </ul>
+	  <li><span class="desc">Recording</span>: This records
+	    various counts through the experiments.
+	    <ul>
+	      <li><code>total(count())</code> Record the total number
+		of flips overall.
+	      <li><code>total(count(h))</code> Record the total number
+		of heads overall.
+	      <li><code>total(count(hh) &gt; count(th))</code> Record the
+	      total number of experiments where the number of HHs is
+		bigger than the number of THs.
+	    </ul>
+	</ul>
+	<p>
+	  Some notes on how the counts and totals are implemented:
+	  <ul>
+	    <li>The counts look for an exact match with the pattern at
+	      the end of the current list.
+	      (On the TODO is to make this more flexible.)
+	    <li>The patterns are case insensitive.
+	    <li>If the pattern is <code>HH</code> and the flips
+	      recorded are <code>HHH</code> then the pattern will
+	      match twice.
+	    <li>In the totals, it is possible to put expressions that
+	      evaluate to true or false (such as <code>count(h) &gt;
+		3</code>).  These are counted as 1 for true and 0 for
+	      false.
+	      So <code>total(count(h) &gt; 3)</code> counts how many
+	      times the count of heads is bigger than 3.
+	  </ul>
+	</p>
+	<h3>TODO</h3>
+	<ul>
+	  <li>Make the pattern matching more flexible
+	  <li>Add dice and cards
+	</ul>
+	<p>
+	  The code is released under
+	  the MIT Licence so if you want to improve it, feel free.
+	  It is
+	  available <a href="https://github.com/loopspace/axes">on github</a>.
+	</p>
+      </div>
+      <div id="helpsign" class="help">
+	<a href="#" id="helplink">?</a>
+      </div>
+    
+  </body>
+</html>
