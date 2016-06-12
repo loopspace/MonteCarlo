@@ -31,6 +31,12 @@ function init() {
     setBias();
     checkPlurals();
     /*
+      The first list chooses what object will be involved in the experiments.
+    */
+    var type = document.getElementById("expt");
+    type.addEventListener("change",setType);
+    setType();
+    /*
       Make the question mark toggle the help pane
      */
     var hlnk = document.getElementById('helplink');
@@ -58,14 +64,22 @@ function getSettings() {
     /*
       Get all the information from the form into an object.
     */
-    // Number of coins
+    // Type of experiment
+    experiment.type = parseInt(form.elements["expt"].value) || 0;
+    // Number of coins/dice/cards
     experiment.ncoins = parseInt(form.elements["num"].value) || 1;
     // Are they biased?
     experiment.biased = form.elements["biased"].value;
-    // If so, what's the bias (= P(head) )
-    experiment.bias = Math.min(1,Math.max(0,parseFloat(form.elements["bias"].value))) || .5;
+    // If so, what's the bias (= P(head) for coin )
+    experiment.bias = form.elements["bias"].value;
     // Are they ordered?
     experiment.order = form.elements["order"].value;
+    // Sides of die?
+    experiment.sides = parseInt(form.elements["nsides"].value) || 6;
+    // Number of cards in a hand
+    experiment.hand = parseInt(form.elements["hand"].value) || 5;
+    // Number of cards in a deck
+    experiment.deck = parseInt(form.elements["deck"].value) || 52;
     // What's the halting condition?
     experiment.stop = form.elements["stop"].value || "true";
     // What do we record for each experiment?
@@ -92,6 +106,42 @@ function setBias(e) {
     }
 }
 
+function setType(e) {
+    var type = document.getElementById("expt");
+    var objs = [
+	document.getElementById("objcoin"),
+	document.getElementById("objdie"),
+	document.getElementById("objcard")
+    ];
+    var expts = [
+	document.getElementById("excoin"),
+	document.getElementById("exdie"),
+	document.getElementById("excard")
+    ];
+    var v = type.value || 0;
+    for (var i = 0; i < 3; i++) {
+	objs[i].style.display = 'none';
+	expts[i].style.display = 'none';
+    }
+    objs[v].style.display = 'inline';
+    expts[v].style.display = 'inline';
+    var nsides = document.getElementById('dicesides');
+    if (v == 1) {
+	nsides.style.display = 'inline';
+    } else {
+	nsides.style.display = 'none';
+    }
+    var ncards = document.getElementById('nocards');
+    var ycards = document.getElementById('yescards');
+    if (v == 2) {
+	ncards.style.display = 'none';
+	ycards.style.display = 'inline';
+    } else {
+	ycards.style.display = 'none';
+	ncards.style.display = 'inline';
+    }
+}
+
 function runExperiment(e) {
     /*
       This is our main function where we initialise everything and
@@ -114,11 +164,12 @@ function runExperiment(e) {
     // Get the settings
     getSettings();
     /*
-      n = number of coins
+      n = number of coins/dice/cards
+      dn = number of sides of dice
       s = are they ordered?
-      p = bias
+      p = biases
     */
-    var n,s,p;
+    var n,dn,s,p;
     /*
       In amongst the conditions and recorded information are various
       "counts".  These keep track of how many times certain events
@@ -143,16 +194,62 @@ function runExperiment(e) {
      */
     var fps;
 
-    // Set n,s,p,fps from form data.
+    // Set n,dn,s,p,fps from form data.
     n = experiment.ncoins;
+    dn = experiment.sides;
     s = Boolean(experiment.order == 1);
     if (experiment.biased == 0) {
-	p = 0.5;
+	if (experiment.type == 0) {
+	    p = 0.5;
+	} else if (experiment.type == 1) {
+	    p = [];
+	    for (var i = 0; i < dn; i++) {
+		p.push(1/dn);
+	    }
+	}
     } else {
-	p = experiment.bias;
+	if (experiment.type == 0) {
+	    p = experiment.bias;
+	} else if (experiment.type == 1) {
+	    p = experiment.bias.split(/,/);
+	    var tp = 0;
+	    var np = 0;
+	    for (var i = 0; i < dn; i++) {
+		if (p[i] && p[i] != '') {
+		    p[i] = parseFloat(p[i]);
+		    tp += p[i];
+		    np += 1;
+		}
+	    }
+	    for (var i = 0; i < dn; i++) {
+		if (!p[i] || p[i] == '') {
+		    p[i] = (1 - tp)/(dn - np);
+		}
+	    }
+	}
+    }
+    if (experiment.type == 2) {
+	p = {};
+	p.deck = experiment.deck;
+	p.hand = experiment.hand;
     }
     fps = experiment.fps;
 
+    var expt;
+    if (experiment.type == 0) {
+	expt = function() {
+	    return flip(n,s,p);
+	}
+    } else if (experiment.type == 1) {
+	expt = function() {
+	    return roll(n,s,p);
+	}
+    } else if (experiment.type == 2) {
+	expt = function() {
+	    return deal(n,s,p);
+	}
+    }
+    
     /*
       stop and loop are the conditions for continuing to flip.  The
       "stop" condition controls when an individual experiment stops.
@@ -205,7 +302,7 @@ function runExperiment(e) {
     /*
       Now that we're all set up, let's roll those coins.
      */
-    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,sep,record,recordelts,0,fps) });
+    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,sep,record,recordelts,0,fps) });
 }
 
 function stopExperiment() {
@@ -219,18 +316,22 @@ function checkPlurals() {
     if (form.elements["num"].value == 1|| form.elements["num"].value == '') {
 	document.getElementById("order").style.display = 'none';
 	document.getElementById("plcoins").style.display = 'none';
+	document.getElementById("pldice").style.display = 'none';
+	document.getElementById("plcards").style.display = 'none';
     } else {
 	document.getElementById("order").style.display = 'inline';
 	document.getElementById("plcoins").style.display = 'inline';
+	document.getElementById("pldice").style.display = 'inline';
+	document.getElementById("plcards").style.display = 'inline';
     }
     if (form.elements["fps"].value == 1 || form.elements["fps"].value == '') {
-	document.getElementById("plflips").style.display = 'none';
+	document.getElementById("plexpts").style.display = 'none';
     } else {
-	document.getElementById("plflips").style.display = 'inline';
+	document.getElementById("plexpts").style.display = 'inline';
     }
 }
 
-function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,sep,record,recordelts,tf,fps) {
+function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,sep,record,recordelts,tf,fps) {
     /*
       This is the function that takes the coin flips and records the
       resultant data and decides what to do next.
@@ -241,14 +342,14 @@ function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,se
 	return;
     }
     if (paused) {
-	window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,sep,record,recordelts,tf,fps) });
+	window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,sep,record,recordelts,tf,fps) });
 	return;
     }
     // Increment our flips-per-frame counter
     tf++;
     var coin,cell;
     // Flip the coin(s)!
-    coin = flip(n,s,p);
+    coin = expt();
     // Update the count registers
     for (var l=0; l < counts.length; l++) {
 	counts[l].increment(coin);
@@ -286,7 +387,7 @@ function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,se
 	    item = document.createElement("li");
 	    item.className = 'expt';
 	    list.appendChild(item);
-	    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,sep,record,recordelts,0,fps) });
+	    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,sep,record,recordelts,0,fps) });
 	} else {
 	    // Time to stop
 	    running = false;
@@ -298,10 +399,10 @@ function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,se
 	// time to break out
 	if (tf < fps) {
 	    // Same frame, so call ourselves once more
-	    doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,sep,record,recordelts,tf,fps);
+	    doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,sep,record,recordelts,tf,fps);
 	} else {
 	    // New frame, so call ourselves but via the animation frame
-	    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,n,s,p,sep,record,recordelts,0,fps) });
+	    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,sep,record,recordelts,0,fps) });
 	}
     }	
 }
@@ -322,6 +423,73 @@ function flip(n,o,p) {
 	flips.sort();
     }
     return flips.join("");
+}
+
+function roll(n,o,p) {
+    /*
+      This is the routine that actually rolls some dice.
+    */
+    var rolls = [];
+    var r;
+    var pd = Math.floor(Math.log10(p.length)) + 1;
+    for (var i = 0; i < n; i++) {
+	r = Math.random();
+	for (var j = 0; j < p.length; j++) {
+	    if (r < p[j]) {
+		rolls.push(pad(j+1,pd));
+		break;
+	    } else {
+		r -= p[j];
+	    }
+	}
+    }
+    if (o) {
+	rolls.sort();
+    }
+    return rolls.join("");
+}
+
+function deal(n,o,p) {
+    /*
+      This is the routine that actually deals some cards.
+    */
+    var pack = shuffle(52);//p.deck);
+    var hand = [];
+    for (var i = 0; i < n; i++) {
+	hand.push(pack.slice(i*p.hand,(i+1)*p.hand));
+	// Need a better sorting algorithm here
+	hand[i].sort();
+	hand[i] = hand[i].join(":");
+    }
+    return hand.join(";");
+}
+
+var packOfCards =
+    function() {
+	var s = ["C","D","H","S"];
+	var sc = ["A",2,3,4,5,6,7,8,9,"T","J","Q","K"];
+	var p = [];
+	for (var i = 0; i < 4; i++) {
+	    for (var j = 0; j < 13; j++) {
+		p.push(sc[j] + s[i]);
+	    }
+	}
+	return p;
+    }();
+
+function shuffle(n) {
+    var d = [];
+    for (var i = 0; i < n; i++) {
+	d[i] = packOfCards[i];
+    }
+    var r,t;
+    for (var i = 0; i < n; i++) {
+	r = Math.floor(Math.random() * (n - i)) + i;
+	t = d[r];
+	d[r] = d[i];
+	d[i] = t;
+    }
+    return d;
 }
 
 function check(c,k) {
@@ -539,4 +707,16 @@ Total = function(f) {
     this.reset = function() {
 	this.value = 0;
     }
+}
+
+function pad(n,l) {
+    var ln = Math.floor(Math.log10(Math.abs(n)))+1; // length of n
+    var z;
+    if (ln < l) {
+        z = new Array(l - ln + 1).join('0');
+    } else {
+        z = '';
+    }
+    z += n.toString();
+    return z;
 }

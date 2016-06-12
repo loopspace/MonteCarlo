@@ -9,30 +9,58 @@
   <body>
     <form id="instructions">
       <p>
-	Flip <input type="text" id="num" class="smallinput"></input>
-	<select id="biased">
-	  <option value="0">unbiased</option>
-	  <option value="1">biased</option>
+	<select id="expt">
+	  <option value="0">Flip</option>
+	  <option value="1">Roll</option>
+	  <option value="2">Deal</option>
 	</select>
-	<span id="biaschoice">
-	  (with bias <input type="text" id="bias" class="smallinput"></input>)
+	<input type="text" id="num" class="smallinput">
+	<span id="yescards">
+	  hands of 
+	  <input type="text" id="hand" class="smallinput">
+	  cards from a deck of
+	  <input type="text" id="deck" class="smallinput">
 	</span>
-	<select id="order">
-	  <option value="0">ordered</option>
-	  <option value="1">unordered</option>
-	</select>
-	coin<span id="plcoins">s</span>,<br> updating every
-	<input type="text" id="fps" class="smallinput"></input>
-	flip<span id="plflips">s</span>,<br>
+	<span id="nocards">
+	  <select id="biased">
+	    <option value="0">unbiased</option>
+	    <option value="1">biased</option>
+	  </select>
+	  <span id="biaschoice">
+	    (with bias <input type="text" id="bias" class="smallinput">)
+	  </span>
+	  <select id="order">
+	    <option value="0">ordered</option>
+	    <option value="1">unordered</option>
+	  </select>
+	  <span id="dicesides">
+	    <select id="nsides">
+	      <option value="4">4</option>
+	      <option value="6" selected="selected">6</option>
+	      <option value="8">8</option>
+	      <option value="10">10</option>
+	      <option value="12">12</option>
+	      <option value="20">20</option>
+	      <option value="24">24</option>
+	      <option value="30">30</option>
+	      <option value="48">48</option>
+	      <option value="60">60</option>
+	      <option value="120">120</option>
+	    </select>-sided
+	  </span>
+	</span>
+	<span id="objcoin">coin<span id="plcoins">s</span></span><span id="objdie">di<span id="pldice">c</span>e</span><span id="objcard">card<span id="plcards">s</span></span>,<br> updating every
+	<input type="text" id="fps" class="smallinput">
+	<span id="excoin">flip</span><span id="exdie">roll</span><span id="excard">deal</span><span id="plexpts">s</span>,<br>
 	until
-	<input type="text" id="stop"></input>
+	<input type="text" id="stop">
 	recording
-	<input type="text" id="record"></input>,<br>
+	<input type="text" id="record">,<br>
 	repeat this experiment until
-	<input type="text" id="loop"></input>
+	<input type="text" id="loop">
 	recording
-	<input type="text" id="total"></input>.<br>
-	<input type="button" id="run" value="Run experiment."></input>
+	<input type="text" id="total">.<br>
+	<input type="button" id="run" value="Run experiment.">
       </p>
     </form>
     <p id="recording">
