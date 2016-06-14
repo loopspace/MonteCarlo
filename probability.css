@@ -56,3 +56,11 @@ ol .recordLabel:after {
 .expt {
     font-family: monospace;
 }
+
+.redsuit {
+    color: red
+}
+
+#recordtable td {
+    text-align: right;
+}
