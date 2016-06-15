@@ -183,6 +183,7 @@ function runExperiment(e) {
       The counts are reset on each experiment.
      */
     var counts = {};
+    var rcounts = {};
     /*
       The totals are similar, except that they persist across the
       experiments.
@@ -275,17 +276,18 @@ function runExperiment(e) {
       The "loop" condition controls when the whole series of
       experiments stops.
      */
-    var stop = makeExpression(experiment.stop,counts,totals);
-    var loop = makeExpression(experiment.loop,counts,totals);
+    var stop = makeExpression(experiment.stop,counts,rcounts,totals);
+    var loop = makeExpression(experiment.loop,counts,rcounts,totals);
     /*
       record and total are arrays of information to be recorded in and between experiments.
     */
-    var record = makeRecord(experiment.record,counts,totals,recordelts,"recordtable");
-    var total = makeRecord(experiment.total,counts,totals,totalelts,"totalslist");
+    var record = makeRecord(experiment.record,counts,rcounts,totals,recordelts,"recordtable");
+    var total = makeRecord(experiment.total,counts,rcounts,totals,totalelts,"totalslist");
     /*
       This initialises the count and total registers.
      */
     counts = makeCounters(counts,n);
+    rcounts = makeRegexCounters(rcounts,n);
     totals = makeTotals(totals);
 
     /*
@@ -321,7 +323,7 @@ function runExperiment(e) {
     /*
       Now that we're all set up, let's roll those coins.
      */
-    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt,sep,record,recordelts,0,fps) });
+    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,rcounts,total,totals,totalelts,expt,fmt,sep,record,recordelts,0,fps) });
 }
 
 function stopExperiment() {
@@ -362,7 +364,7 @@ function checkPlurals() {
     }
 }
 
-function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt,sep,record,recordelts,tf,fps) {
+function doExperiment(list,item,stop,loop,counts,rcounts,total,totals,totalelts,expt,fmt,sep,record,recordelts,tf,fps) {
     /*
       This is the function that takes the coin flips and records the
       resultant data and decides what to do next.
@@ -373,7 +375,7 @@ function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt
 	return;
     }
     if (paused) {
-	window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt,sep,record,recordelts,tf,fps) });
+	window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,rcounts,total,totals,totalelts,expt,fmt,sep,record,recordelts,tf,fps) });
 	return;
     }
     // Increment our flips-per-frame counter
@@ -385,25 +387,33 @@ function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt
     for (var l=0; l < counts.length; l++) {
 	counts[l].increment(coin);
     }
+    // Update the rcount registers
+    for (var l=0; l < rcounts.length; l++) {
+	rcounts[l].increment(coin);
+    }
     // Add the result of the flip to the list on display
     item.innerHTML += fmt(coin) + sep;
     // Update the record entries
     for (var l=0; l < record.length; l++) {
-	recordelts[l].innerHTML = record[l](counts,totals);
+	recordelts[l].innerHTML = record[l](counts,rcounts,totals);
     }
     // Check the stop condition.
-    if (stop(counts,totals)) {
+    if (stop(counts,rcounts,totals)) {
 	// That's the end of an experiment, so we update the totals
 	for (var l=0; l < totals.length; l++) {
-	    totals[l].increment(counts);
+	    totals[l].increment(counts,rcounts);
 	}
 	// and display the results
 	for (var l=0; l < total.length; l++) {
-	    totalelts[l].innerHTML = total[l](counts,totals);
+	    totalelts[l].innerHTML = total[l](counts,rcounts,totals);
 	}
 	// reset the count registers
 	for (var l=0; l < counts.length; l++) {
 	    counts[l].reset();
+	}
+	// reset the count registers
+	for (var l=0; l < rcounts.length; l++) {
+	    rcounts[l].reset();
 	}
 	// add a new column to the record table
 	for (var l=0; l < recordelts.length; l++) {
@@ -412,13 +422,13 @@ function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt
 	    recordelts[l] = cell;
 	}
 	// Are we finished overall?
-	if (!loop(counts,totals)) {
+	if (!loop(counts,rcounts,totals)) {
 	    // Nope, so create a new li for the next experiment and
 	    // start all over again
 	    item = document.createElement("li");
 	    item.className = 'expt';
 	    list.appendChild(item);
-	    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt,sep,record,recordelts,0,fps) });
+	    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,rcounts,total,totals,totalelts,expt,fmt,sep,record,recordelts,0,fps) });
 	} else {
 	    // Time to stop
 	    running = false;
@@ -430,10 +440,10 @@ function doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt
 	// time to break out
 	if (tf < fps) {
 	    // Same frame, so call ourselves once more
-	    doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt,sep,record,recordelts,tf,fps);
+	    doExperiment(list,item,stop,loop,counts,rcounts,total,totals,totalelts,expt,fmt,sep,record,recordelts,tf,fps);
 	} else {
 	    // New frame, so call ourselves but via the animation frame
-	    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,total,totals,totalelts,expt,fmt,sep,record,recordelts,0,fps) });
+	    window.requestAnimationFrame( function() { doExperiment(list,item,stop,loop,counts,rcounts,total,totals,totalelts,expt,fmt,sep,record,recordelts,0,fps) });
 	}
     }	
 }
@@ -552,6 +562,17 @@ function makeCounters(c,n) {
     return ctr;
 }
 
+function makeRegexCounters(c,n) {
+    /*
+      This assigns Counter objects to each count that is called for.
+     */
+    var ctr = [];
+    for (k in c) {
+	ctr[c[k]] = new RegexCounter(k,n);
+    }
+    return ctr;
+}
+
 function makeTotals(t) {
     /*
       This assigns Total objects to each total that is called for.
@@ -563,13 +584,14 @@ function makeTotals(t) {
     return tl;
 }
 
-function makeExpression(str,c,t) {
+function makeExpression(str,c,r,t) {
     /*
       This takes an expression as supplied by the user and attempts to
       make sense of it.  Probably could do with better error catching.
      */
     var patterns, pattern;
     var nc = Object.keys(c).length;
+    var nr = Object.keys(r).length;
     /*
       Replace natural language by javascript
      */
@@ -578,6 +600,33 @@ function makeExpression(str,c,t) {
     str = str.replace(/not/gi,"!");
     str = str.replace(/=/g,"==");
     str = str.replace(/====/g,"==");
+
+    /*
+      Look through for any occurences of "rcount(...)".
+
+      Note: due to the way this works, currently the pattern can't
+      contain parentheses.  Put this on the TODO list ...
+     */
+    patterns = str.match(/rcount\([^)]*\)/gi);
+    if (patterns) {
+	for (var i = 0; i < patterns.length; i++) {
+	    /*
+	      For each match, we take the bit between the parenthesis
+	     */
+	    pattern = patterns[i].substr(7,patterns[i].length-8);
+	    /*
+	      If we haven't seen it before, register it
+	     */
+	    if (typeof r[pattern] === "undefined") {
+		r[pattern] = nr++ ;
+	    }
+	}
+	/*
+	  Replace the "rcount(...)" in the expression by a function
+	  that returns the value of the corresponding register.
+	 */
+	str = str.replace(/rcount\(([^)]*)\)/gi,function(m,p) {return " check(r," + r[p] + ") ";});
+    }
 
     /*
       Look through for any occurences of "count(...)".
@@ -633,6 +682,13 @@ function makeExpression(str,c,t) {
 	      Found it, so make a new expression from the innards.
 	     */
 	    total = str.substring(i+6,j-1);
+	    /*
+	      if this is empty, we assume the user meant to count the
+	      number of experiments (similar to what count() does)
+	    */
+	    if (total.replace(/\s+/g) == '') {
+		total = "1";
+	    }
 	    fn = makeExpression(total,c,t);
 	    /*
 	      Save the corresponding function.
@@ -650,11 +706,11 @@ function makeExpression(str,c,t) {
 	totalstr = str;
     }
     // Turn the modified string into a function
-    str = Function("c", "t", "return " + totalstr);
+    str = Function("c", "r", "t", "return " + totalstr);
     return str;
 }
 
-function makeRecord(str,c,t,rc,id) {
+function makeRecord(str,c,r,t,rc,id) {
     /*
       This sets up elements on the page that will receive the counts
       and totals as they are worked out.  Counts will be in a table,
@@ -693,7 +749,7 @@ function makeRecord(str,c,t,rc,id) {
 	recordelt = document.createElement(itemtag);
 	entry.appendChild(recordelt);
 	rc.push(recordelt);
-	record[k] = makeExpression(record[k],c,t);
+	record[k] = makeExpression(record[k],c,r,t);
     }
     return record;
 }
@@ -709,24 +765,66 @@ Counter = function(s,k) {
     this.state = "";
     if (k > 1) {
 	this.sep = ",";
-	this.length++;
     } else {
 	this.sep = "";
     }
-    this.pattern = s.toUpperCase() + this.sep;
+    this.pattern = s.toUpperCase();
 
     this.increment = function(f) {
-	this.state += f.toUpperCase() + this.sep;
-	while (this.state.length > this.length) {
-	    this.state = this.state.substr(1);
-	}
-	if (this.state == this.pattern) {
-	    this.value++;
+	f += this.sep;
+	for (var k = 0; k < f.length; k ++) {
+	    this.state += f[k].toUpperCase();
+	    if (this.state.length > this.length) {
+		this.state = this.state.substr(this.state.length - this.length);
+	    }
+	    if (this.state == this.pattern) {
+		this.value++;
+	    }
 	}
     }
 
     this.reset = function() {
 	this.state = "";
+	this.value = 0;
+    }
+    
+    return this;
+}
+
+RegexCounter = function(s,k) {
+    /*
+      This is an object for counting occurences of regex patterns
+      within a single experiment.
+     */
+    this.value = 0;
+    this.state = "";
+    if (k > 1) {
+	this.sep = ",";
+    } else {
+	this.sep = "";
+    }
+    if (s.substr(-1) != '$') {
+	s += '$';
+    }
+    this.pattern = new RegExp(s,'i');
+    this.matches = [];
+
+    this.increment = function(f) {
+	f += this.sep;
+	var s;
+	for (var k = 0; k < f.length; k++) {
+	    this.state += f[k].toUpperCase();
+	    s = this.state.search(this.pattern);
+	    if (s != -1 && !this.matches[s]) {
+		this.value++;
+		this.matches[s] = true;
+	    }
+	}
+    }
+
+    this.reset = function() {
+	this.state = "";
+	this.matches = [];
 	this.value = 0;
     }
     
