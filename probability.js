@@ -601,12 +601,122 @@ function makeExpression(str,c,r,t) {
     str = str.replace(/=/g,"==");
     str = str.replace(/====/g,"==");
 
+    var nstr = "";
+    var ind = 0;
+
+    /*
+      Look through for words
+    */
+    var wordre = new RegExp('[a-z]+','ig');
+    var word;
+    var arg;
+    var i,p,pind;
+    var fn;
+
+    while (word = wordre.exec(str)) {
+	if (word.index < ind) {
+	    continue;
+	}
+	/*
+	  Add everything up to the word to the output string
+	*/
+	nstr += str.substring(ind,word.index);
+	/*
+	  Add a space
+	*/
+	nstr += " ";
+	/*
+	  Get the argument to the word
+	*/
+	arg = "";
+	ind = word.index + word[0].length;
+	/*
+	  Check for the magic word "true"
+	*/
+	if (word[0] == "true") {
+	    nstr += "true ";
+	    continue;
+	}
+	/*
+	  For everything else, we look for the argument.
+
+	  Find the opening bracket.
+	*/
+	while (ind < str.length && str.charAt(ind) != "(") {
+	    ind++;
+	}
+	p = 1;
+	pind = ind;
+	pind++;
+	/*
+	  Now find the matching closing bracket
+	*/
+	while (ind < str.length && p > 0) {
+	    ind++;
+	    if (str.charAt(ind) == "(") {
+		p++;
+	    }
+	    if (str.charAt(ind) == ")") {
+		p--;
+	    }
+	}
+	/*
+	  The substring is the argument
+	*/
+	arg = str.substring(pind,ind);
+	ind++;
+	/*
+	  Add the check function to the string
+	*/
+	nstr += 'check(';
+
+	/*
+	  If we haven't seen the counter before, register it
+	*/
+	if (word[0] == "count") {
+	    if (typeof c[arg] === "undefined") {
+		c[arg] = nc++;
+	    }
+	    nstr += 'c,' + c[arg];
+	} else if (word[0] == "rcount") {
+	    if (typeof r[arg] === "undefined") {
+		r[arg] = nr++;
+	    }
+	    nstr += 'r,' + r[arg];
+	} else if (word[0] == "total") {
+	    if (arg.replace(/\s+/g) == '') {
+		arg = "1";
+	    }
+	    fn = makeExpression(arg,c,r,t);
+	    /*
+	      Save the corresponding function.
+	     */
+	    t.push(fn);
+	    nstr += 't,' + (t.length - 1);
+	}
+	nstr += ')';
+    }
+    /*
+      Add the rest of the string
+     */
+    nstr += str.substring(ind);
+    // Turn the modified string into a function
+    return Function("c", "r", "t", "return " + nstr);
+}
+
+
+/*
+This is the original construction function
+*/
+function stuff() {
+	
     /*
       Look through for any occurences of "rcount(...)".
-
+      
       Note: due to the way this works, currently the pattern can't
       contain parentheses.  Put this on the TODO list ...
-     */
+    */
+	
     patterns = str.match(/rcount\([^)]*\)/gi);
     if (patterns) {
 	for (var i = 0; i < patterns.length; i++) {
@@ -689,7 +799,7 @@ function makeExpression(str,c,r,t) {
 	    if (total.replace(/\s+/g) == '') {
 		total = "1";
 	    }
-	    fn = makeExpression(total,c,t);
+	    fn = makeExpression(total,c,r,t);
 	    /*
 	      Save the corresponding function.
 	     */
