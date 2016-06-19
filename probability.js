@@ -186,6 +186,7 @@ function runExperiment(e) {
       experiments.
     */
     var counts = {};
+    var totals = [];
     /*
       When we record information, we have to know where to display it.
      */
@@ -556,6 +557,18 @@ function makeCounters(c,n) {
 	    ctr[c[k]] = new UniqueCounter(arr[1],n);
 	} else if (arr[0] == "urcount") {
 	    ctr[c[k]] = new UniqueRegexCounter(arr[1],n);
+	} else if (arr[0] == "sum") {
+	    ctr[c[k]] = new SumCounter(arr[1],n);
+	} else if (arr[0] == "usum") {
+	    ctr[c[k]] = new UniqueSumCounter(arr[1],n);
+	} else if (arr[0] == "max") {
+	    ctr[c[k]] = new MaxCounter(arr[1],n);
+	} else if (arr[0] == "umax") {
+	    ctr[c[k]] = new UniqueMaxCounter(arr[1],n);
+	} else if (arr[0] == "min") {
+	    ctr[c[k]] = new MinCounter(arr[1],n);
+	} else if (arr[0] == "umin") {
+	    ctr[c[k]] = new UniqueMinCounter(arr[1],n);
 	}
     }
     return ctr;
@@ -660,22 +673,22 @@ function makeExpression(str,c,t) {
 	/*
 	  If we haven't seen the counter before, register it
 	*/
-	if (word[0].substr(-5) == "count") {
+	if (word[0] == "total") {
+	    if (arg.replace(/\s+/g) == '') {
+		arg = "1";
+	    }
+	    fn = makeExpression(arg,c,t);
+	    /*
+	      Save the corresponding function.
+	    */
+	    t.push(fn);
+	    nstr += 't,' + (t.length - 1);
+	} else {
 	    arg = word[0] + "\0" + arg;
 	    if (typeof c[arg] === "undefined") {
 		c[arg] = nc++;
 	    }
 	    nstr += 'c,' + c[arg];
-	} else if (word[0] == "total") {
-	    if (arg.replace(/\s+/g) == '') {
-		arg = "1";
-	    }
-	    fn = makeExpression(arg,c,r,t);
-	    /*
-	      Save the corresponding function.
-	     */
-	    t.push(fn);
-	    nstr += 't,' + (t.length - 1);
 	}
 	nstr += ')';
     }
@@ -684,7 +697,7 @@ function makeExpression(str,c,t) {
      */
     nstr += str.substring(ind);
     // Turn the modified string into a function
-    return Function("c", "r", "t", "return " + nstr);
+    return Function("c", "t", "return " + nstr);
 }
 
 
@@ -996,6 +1009,248 @@ UniqueRegexCounter = function(s,k) {
 	} else {
 	    this.value = 0;
 	}
+    }
+
+    this.reset = function() {
+	this.state = "";
+	this.value = 0;
+    }
+    
+    return this;
+}
+
+SumCounter = function(s,k) {
+    /*
+      This is an object for adding the lengths of regex patterns found
+      within a single experiment.
+
+      In this version, overlaps are allowed.
+     */
+    this.value = 0;
+    this.state = "";
+    if (k > 1) {
+	this.sep = ",";
+    } else {
+	this.sep = "";
+    }
+    this.pattern = new RegExp(s,'ig');
+    this.matches = [];
+
+    this.increment = function(f) {
+	this.state += f.toUpperCase() + this.sep;
+	var s,i,j,n;
+	i = 0;
+	j = 0;
+	n = 0;
+	while (i < this.state.length) {
+	    this.pattern.lastIndex = i;
+	    s = this.pattern.exec(this.state);
+	    if (s) {
+		if (s.index + s[0].length > j) {
+		    n += s[0].length;
+		}
+		i = s.index + 1;
+		j = s.index + s[0].length;
+	    } else {
+		i = this.state.length;
+	    }
+	}
+	this.value = n;
+    }
+
+    this.reset = function() {
+	this.state = "";
+	this.value = 0;
+    }
+    
+    return this;
+}
+
+UniqueSumCounter = function(s,k) {
+    /*
+      This is an object for adding the lengths of occurences of regex
+      patterns within a single experiment.
+     */
+    this.value = 0;
+    this.state = "";
+    if (k > 1) {
+	this.sep = ",";
+    } else {
+	this.sep = "";
+    }
+    this.pattern = new RegExp(s,'ig');
+
+    this.increment = function(f) {
+	this.state += f.toUpperCase() + this.sep;
+	this.value = 0;
+	var s = this.state.match(this.pattern);
+	if (s) {
+	    for (var i = 0; i < s.length; i++) {
+		this.value += s[0].length;
+	    }
+	}
+    }
+
+    this.reset = function() {
+	this.state = "";
+	this.value = 0;
+    }
+    
+    return this;
+}
+
+MaxCounter = function(s,k) {
+    /*
+      This is an object for finding the maximum length of regex
+      patterns found within a single experiment.
+
+      In this version, overlaps are allowed.
+     */
+    this.value = 0;
+    this.state = "";
+    if (k > 1) {
+	this.sep = ",";
+    } else {
+	this.sep = "";
+    }
+    this.pattern = new RegExp(s,'ig');
+    this.matches = [];
+
+    this.increment = function(f) {
+	this.state += f.toUpperCase() + this.sep;
+	var s,i,j,n;
+	i = 0;
+	j = 0;
+	n = 0;
+	while (i < this.state.length) {
+	    this.pattern.lastIndex = i;
+	    s = this.pattern.exec(this.state);
+	    if (s) {
+		if (s.index + s[0].length > j) {
+		    n = Math.max(n,s[0].length);
+		}
+		i = s.index + 1;
+		j = s.index + s[0].length;
+	    } else {
+		i = this.state.length;
+	    }
+	}
+	this.value = n;
+    }
+
+    this.reset = function() {
+	this.state = "";
+	this.value = 0;
+    }
+    
+    return this;
+}
+
+UniqueMaxCounter = function(s,k) {
+    /*
+      This is an object for finding the maximum length of occurences
+      of regex patterns within a single experiment.
+     */
+    this.value = 0;
+    this.state = "";
+    if (k > 1) {
+	this.sep = ",";
+    } else {
+	this.sep = "";
+    }
+    this.pattern = new RegExp(s,'ig');
+
+    this.increment = function(f) {
+	this.state += f.toUpperCase() + this.sep;
+	var n = 0;
+	var s = this.state.match(this.pattern);
+	if (s) {
+	    for (var i = 0; i < s.length; i++) {
+		n = Math.max(n,s[0].length);
+	    }
+	}
+	this.value = n;
+    }
+
+    this.reset = function() {
+	this.state = "";
+	this.value = 0;
+    }
+    
+    return this;
+}
+
+MinCounter = function(s,k) {
+    /*
+      This is an object for finding the minimum length of regex
+      patterns found within a single experiment.
+
+      In this version, overlaps are allowed.
+     */
+    this.value = 0;
+    this.state = "";
+    if (k > 1) {
+	this.sep = ",";
+    } else {
+	this.sep = "";
+    }
+    this.pattern = new RegExp(s,'ig');
+    this.matches = [];
+
+    this.increment = function(f) {
+	this.state += f.toUpperCase() + this.sep;
+	var s,i,j,n;
+	i = 0;
+	j = 0;
+	n = this.state.length;
+	while (i < this.state.length) {
+	    this.pattern.lastIndex = i;
+	    s = this.pattern.exec(this.state);
+	    if (s) {
+		if (s.index + s[0].length > j) {
+		    n = Math.min(n,s[0].length);
+		}
+		i = s.index + 1;
+		j = s.index + s[0].length;
+	    } else {
+		i = this.state.length;
+	    }
+	}
+	this.value = n;
+    }
+
+    this.reset = function() {
+	this.state = "";
+	this.value = 0;
+    }
+    
+    return this;
+}
+
+UniqueMinCounter = function(s,k) {
+    /*
+      This is an object for finding the minimum length of occurences
+      of regex patterns within a single experiment.
+     */
+    this.value = 0;
+    this.state = "";
+    if (k > 1) {
+	this.sep = ",";
+    } else {
+	this.sep = "";
+    }
+    this.pattern = new RegExp(s,'ig');
+
+    this.increment = function(f) {
+	this.state += f.toUpperCase() + this.sep;
+	var n = this.state.length;
+	var s = this.state.match(this.pattern);
+	if (s) {
+	    for (var i = 0; i < s.length; i++) {
+		n = Math.min(n,s[0].length);
+	    }
+	}
+	this.value = n;
     }
 
     this.reset = function() {
