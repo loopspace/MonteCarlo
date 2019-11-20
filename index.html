@@ -89,13 +89,6 @@
 	  The conditions for stopping an experiment or run of
 	  experiments and the counts that can be recorded use a
 	  particular syntax.
-	  The basic element is <code>count(...)</code> which counts
-	  the number of occurences of an event within an experiment.
-	  For keeping track between experiments, there
-	  is <code>total(...)</code>.
-	  These can also be used in the "recording" fields.
-	  Logical and mathematical expressions using these can be
-	  used.
 	  Examples are given in the explanations below.
 	</p>
 	<ul>
@@ -161,6 +154,18 @@
 	  <li><span class="desc">Updating every ...</span>: The
 	    website lists all of the experiments, but with a long run it can
 	    be slow to update every flip/roll/deal.
+	</ul>
+	<h4>Condition and Recording Statements</h4>
+	<p>
+	  The basic element is <code>count(...)</code> which counts
+	  the number of occurences of an event within an experiment.
+	  For keeping track between experiments, there
+	  is <code>total(...)</code>.
+	  These can also be used in the "recording" fields.
+	  Logical and mathematical expressions using these can be
+	  used.
+	</p>
+	<ul>
 	  <li><span class="desc">Until</span>: This gives a condition
 	    for when a given run of experiments should be stopped.
 	    The examples are all in terms of coins.

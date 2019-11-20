@@ -827,7 +827,15 @@ function makeRecord(str,c,t,rc,id) {
     }
     var patterns,pattern,nc;
     nc = Object.keys(c).length;
-    var record = str.split(/\s*[,;]\s*/);
+    var rcord = str.split(/\s*[,;]\s*/);
+    var record = [];
+    var rtmp;
+    for (var k=0; k<rcord.length; k++) {
+	rtmp = expandRange(rcord[k]);
+	for (var j = 0; j < rtmp.length; j++) {
+	    record.push(rtmp[j]);
+	}
+    }
     var recording = document.getElementById(id);
     recording.innerHTML = '';
     var entrytag;
@@ -858,6 +866,28 @@ function makeRecord(str,c,t,rc,id) {
 	record[k] = makeExpression(record[k],c,t);
     }
     return record;
+}
+
+function expandRange(s) {
+    var rtn = [];
+    var srtn;
+    if (RegExp('[0-9]:[0-9]').test(s)) {
+	var match = s.match('(.*?)([0-9]+):([0-9]+)(.*)');
+	var a = parseInt(match[2],10);
+	var b = parseInt(match[3],10);
+	if (b < a) {
+	    a,b = b,a;
+	}
+	for (var i = a; i <= b; i++) {
+	    srtn = expandRange(match[1] + i + match[4]);
+	    for (var j = 0; j < srtn.length; j++) {
+		rtn.push(srtn[j]);
+	    }
+	}
+    } else {
+	rtn.push(s);
+    }
+    return rtn;
 }
 
 Counter = function(s,k) {
