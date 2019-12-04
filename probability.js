@@ -549,25 +549,25 @@ function makeCounters(c,n) {
     var arr;
     for (k in c) {
 	arr = k.split("\0");
-	if (arr[0] == "count") {
+	if (arr[0].toLowerCase() == "count") {
 	    ctr[c[k]] = new Counter(arr[1],n);
-	} else if (arr[0] == "rcount") {
+	} else if (arr[0].toLowerCase() == "rcount") {
 	    ctr[c[k]] = new RegexCounter(arr[1],n);
-	} else if (arr[0] == "ucount") {
+	} else if (arr[0].toLowerCase() == "ucount") {
 	    ctr[c[k]] = new UniqueCounter(arr[1],n);
-	} else if (arr[0] == "urcount") {
+	} else if (arr[0].toLowerCase() == "urcount") {
 	    ctr[c[k]] = new UniqueRegexCounter(arr[1],n);
-	} else if (arr[0] == "sum") {
+	} else if (arr[0].toLowerCase() == "sum") {
 	    ctr[c[k]] = new SumCounter(arr[1],n);
-	} else if (arr[0] == "usum") {
+	} else if (arr[0].toLowerCase() == "usum") {
 	    ctr[c[k]] = new UniqueSumCounter(arr[1],n);
-	} else if (arr[0] == "max") {
+	} else if (arr[0].toLowerCase() == "max") {
 	    ctr[c[k]] = new MaxCounter(arr[1],n);
-	} else if (arr[0] == "umax") {
+	} else if (arr[0].toLowerCase() == "umax") {
 	    ctr[c[k]] = new UniqueMaxCounter(arr[1],n);
-	} else if (arr[0] == "min") {
+	} else if (arr[0].toLowerCase() == "min") {
 	    ctr[c[k]] = new MinCounter(arr[1],n);
-	} else if (arr[0] == "umin") {
+	} else if (arr[0].toLowerCase() == "umin") {
 	    ctr[c[k]] = new UniqueMinCounter(arr[1],n);
 	}
     }
@@ -673,7 +673,7 @@ function makeExpression(str,c,t) {
 	/*
 	  If we haven't seen the counter before, register it
 	*/
-	if (word[0] == "total") {
+	if (word[0].toLowerCase() == "total") {
 	    if (arg.replace(/\s+/g) == '') {
 		arg = "1";
 	    }
