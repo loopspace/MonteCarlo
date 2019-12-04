@@ -63,4 +63,6 @@ ol .recordLabel:after {
 
 #recordtable td {
     text-align: right;
+    display: inline-block;
 }
+

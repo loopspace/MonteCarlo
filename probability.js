@@ -280,7 +280,7 @@ function runExperiment(e) {
       record and total are arrays of information to be recorded in and between experiments.
     */
     var record = makeRecord(experiment.record,counts,totals,recordelts,"recordtable");
-    var total = makeRecord(experiment.total,counts,totals,totalelts,"totalslist");
+    var total = makeRecord(experiment.total,counts,totals,totalelts,"totalstable");
     /*
       This initialises the count and total registers.
      */
